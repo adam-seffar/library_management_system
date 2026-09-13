@@ -1,0 +1,377 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Inspect Return · {{ return_request.book.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .inspection-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    
+    .inspection-header {
+        margin-bottom: var(--spacing-xl);
+        border-bottom: 2px solid var(--border-warm);
+        padding-bottom: var(--spacing-md);
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: var(--spacing-md);
+    }
+    
+    .inspection-header h1 {
+        border-left: 3px solid var(--accent-gold);
+        padding-left: var(--spacing-lg);
+        margin-bottom: 0;
+        font-size: 1.5rem;
+    }
+    
+    /* Details grid */
+    .details-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-xl);
+        margin-bottom: var(--spacing-xl);
+    }
+    
+    .detail-panel {
+        border: 1px solid var(--border-warm);
+        background: var(--bg-card);
+        padding: var(--spacing-lg);
+    }
+    
+    .panel-title {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.65rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--accent-fine);
+        margin-bottom: var(--spacing-md);
+        padding-bottom: var(--spacing-xs);
+        border-bottom: 1px solid var(--border-warm);
+    }
+    
+    .info-row {
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .info-label {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.6rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        display: block;
+        margin-bottom: var(--spacing-xs);
+    }
+    
+    .info-value {
+        font-family: 'Fraunces', serif;
+        font-size: 0.9rem;
+    }
+    
+    .info-value-mono {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.75rem;
+    }
+    
+    /* Book cover in inspection */
+    .inspection-cover {
+        margin-top: var(--spacing-md);
+        max-width: 150px;
+        border: 1px solid var(--border-warm);
+    }
+    
+    .inspection-cover img {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+    
+    /* Overdue alert */
+    .overdue-alert {
+        margin: var(--spacing-lg) 0;
+        padding: var(--spacing-md);
+        border-left: 3px solid var(--status-overdue);
+        background: rgba(184, 92, 56, 0.05);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+    }
+    
+    /* Decision form */
+    .decision-form {
+        margin-top: var(--spacing-xl);
+        padding-top: var(--spacing-xl);
+        border-top: 1px solid var(--border-warm);
+    }
+    
+    .form-group {
+        margin-bottom: var(--spacing-lg);
+    }
+    
+    .form-group label {
+        display: block;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        margin-bottom: var(--spacing-sm);
+    }
+    
+    /* Radio buttons - custom, no Bootstrap */
+    .radio-group {
+        display: flex;
+        gap: var(--spacing-xl);
+        flex-wrap: wrap;
+    }
+    
+    .radio-option {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        cursor: pointer;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 1px solid var(--border-warm);
+        transition: all 0.15s ease;
+    }
+    
+    .radio-option:hover {
+        border-color: var(--accent-gold);
+    }
+    
+    .radio-option input[type="radio"] {
+        width: auto;
+        margin: 0;
+        accent-color: var(--accent-gold);
+    }
+    
+    .radio-option input[type="radio"]:checked + span {
+        color: var(--accent-gold);
+    }
+    
+    .radio-label {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        letter-spacing: 0.03em;
+    }
+    
+    .radio-desc {
+        font-size: 0.6rem;
+        color: var(--text-muted);
+        margin-left: var(--spacing-md);
+    }
+    
+    textarea {
+        width: 100%;
+        min-height: 100px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.75rem;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-warm);
+        padding: var(--spacing-md);
+        color: var(--text-primary);
+        resize: vertical;
+    }
+    
+    textarea:focus {
+        border-color: var(--accent-gold);
+        outline: none;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: var(--spacing-md);
+        justify-content: flex-end;
+        margin-top: var(--spacing-xl);
+        padding-top: var(--spacing-lg);
+        border-top: 1px solid var(--border-warm);
+    }
+    
+    .note-hint {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.6rem;
+        color: var(--text-muted);
+        margin-top: var(--spacing-xs);
+    }
+    
+    hr {
+        border: none;
+        border-top: 1px solid var(--border-warm);
+        margin: var(--spacing-lg) 0;
+    }
+    
+    @media (max-width: 768px) {
+        .details-grid {
+            grid-template-columns: 1fr;
+            gap: var(--spacing-md);
+        }
+        
+        .inspection-container {
+            margin: 0 var(--spacing-md);
+        }
+        
+        .radio-group {
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+        
+        .form-actions .btn {
+            width: 100%;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="inspection-container">
+    <div class="inspection-header">
+        <h1>Inspect Return</h1>
+        <span class="section-count">Request #{{ return_request.id }}</span>
+    </div>
+    
+    <!-- Status indicator -->
+    <div style="margin-bottom: var(--spacing-lg); font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;">
+        <span style="border-left: 2px solid var(--status-due-soon); padding-left: var(--spacing-sm);">
+            Status: pending review
+        </span>
+    </div>
+    
+    <!-- Two-column details -->
+    <div class="details-grid">
+        <!-- Student Information -->
+        <div class="detail-panel">
+            <div class="panel-title">Student</div>
+            <div class="info-row">
+                <span class="info-label">Name</span>
+                <span class="info-value">{{ return_request.student.get_full_name|default:return_request.student.username }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Email</span>
+                <span class="info-value-mono">{{ return_request.student.email|default:"not provided" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Role</span>
+                <span class="info-value-mono">{{ return_request.student.get_role_display }}</span>
+            </div>
+        </div>
+        
+        <!-- Borrow Details -->
+        <div class="detail-panel">
+            <div class="panel-title">Borrow Record</div>
+            <div class="info-row">
+                <span class="info-label">Borrowed</span>
+                <span class="info-value-mono">{{ return_request.borrow_record.borrow_date|date:"F d, Y · H:i" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Days held</span>
+                <span class="info-value-mono">{{ days_borrowed }} days</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Expected due</span>
+                <span class="info-value-mono">{{ return_request.borrow_record.due_date|date:"F d, Y"|default:"—" }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Book Information -->
+    <div class="detail-panel" style="margin-bottom: var(--spacing-xl);">
+        <div class="panel-title">Book</div>
+        <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-lg);">
+            <div style="flex: 2;">
+                <div class="info-row">
+                    <span class="info-label">Title</span>
+                    <span class="info-value">{{ return_request.book.title }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Author</span>
+                    <span class="info-value-mono">{{ return_request.book.author }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">ISBN</span>
+                    <span class="info-value-mono">{{ return_request.book.isbn|default:"not recorded" }}</span>
+                </div>
+            </div>
+            {% if return_request.book.cover_img %}
+            <div class="inspection-cover">
+                <img src="{{ return_request.book.cover_img }}" alt="{{ return_request.book.title }} cover"
+                     onerror="this.style.display='none'">
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Overdue warning -->
+    {% if days_borrowed > 14 %}
+    <div class="overdue-alert">
+        ⚠ This book is {{ days_borrowed|add:"-14" }} days overdue. 
+        Late fees may apply upon approval.
+    </div>
+    {% endif %}
+    
+    <!-- Decision Form -->
+    <form method="post" class="decision-form">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+        <div style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); border-left: 3px solid var(--status-overdue); background: rgba(184, 92, 56, 0.05);">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+        
+        <div class="form-group">
+            <label>Decision</label>
+            <div class="radio-group">
+                {% for radio in form.action %}
+                <label class="radio-option">
+                    {{ radio.tag }}
+                    <span class="radio-label">
+                        {% if radio.data.value == 'approve' %}
+                            ✓ Approve Return
+                        {% else %}
+                            ✗ Reject Return
+                        {% endif %}
+                    </span>
+                    <span class="radio-desc">
+                        {% if radio.data.value == 'approve' %}
+                            — book is in good condition
+                        {% else %}
+                            — book has damage or issues
+                        {% endif %}
+                    </span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.notes.id_for_label }}">Librarian Notes</label>
+            {{ form.notes }}
+            <div class="note-hint">
+                {% if form.action.value == 'reject' %}
+                    • Required: explain why the return is rejected
+                {% else %}
+                    • Optional: note book condition or observations
+                {% endif %}
+            </div>
+            {% if form.notes.errors %}
+            <div style="color: var(--status-overdue); font-size: 0.65rem; margin-top: var(--spacing-xs);">
+                {{ form.notes.errors }}
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="form-actions">
+            <a href="{% url 'manage_return_requests' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn">Submit Decision</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,322 @@
+{% extends 'base.html' %}
+
+{% block title %}System Overview · Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-header {
+        margin-bottom: var(--spacing-xl);
+        border-bottom: 2px solid var(--border-warm);
+        padding-bottom: var(--spacing-md);
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: var(--spacing-md);
+    }
+    
+    .dashboard-header h1 {
+        border-left: 3px solid var(--accent-gold);
+        padding-left: var(--spacing-lg);
+        margin-bottom: 0;
+        font-size: 1.75rem;
+    }
+    
+    /* Stats row - compact typography */
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-xl);
+        padding: var(--spacing-md) 0;
+        border-bottom: 1px solid var(--border-warm);
+    }
+    
+    .stat-block {
+        border-left: 1px solid var(--border-warm);
+        padding-left: var(--spacing-md);
+    }
+    
+    .stat-number {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 2rem;
+        font-weight: 500;
+        color: var(--accent-gold);
+        line-height: 1;
+    }
+    
+    .stat-label {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.6rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-top: var(--spacing-xs);
+    }
+    
+    .stat-sub {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.6rem;
+        color: var(--text-muted);
+        margin-top: var(--spacing-xs);
+    }
+    
+    /* Two-column layout */
+    .two-column {
+        display: grid;
+        grid-template-columns: 1fr 1.5fr;
+        gap: var(--spacing-xl);
+        margin-bottom: var(--spacing-xl);
+    }
+    
+    .info-panel {
+        border: 1px solid var(--border-warm);
+        background: var(--bg-card);
+    }
+    
+    .panel-header {
+        padding: var(--spacing-md) var(--spacing-lg);
+        border-bottom: 1px solid var(--border-warm);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--accent-fine);
+    }
+    
+    .panel-body {
+        padding: var(--spacing-lg);
+    }
+    
+    /* User stats - simple list */
+    .stat-list {
+        list-style: none;
+    }
+    
+    .stat-list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: var(--spacing-sm) 0;
+        border-bottom: 1px dotted var(--border-warm);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.75rem;
+    }
+    
+    .stat-list-label {
+        color: var(--text-secondary);
+    }
+    
+    .stat-list-value {
+        color: var(--accent-gold);
+        font-weight: 500;
+    }
+    
+    /* Activity log */
+    .activity-list {
+        list-style: none;
+    }
+    
+    .activity-item {
+        display: flex;
+        gap: var(--spacing-md);
+        padding: var(--spacing-sm) 0;
+        border-bottom: 1px dotted var(--border-warm);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+    }
+    
+    .activity-icon {
+        opacity: 0.5;
+        width: 24px;
+    }
+    
+    .activity-content {
+        flex: 1;
+    }
+    
+    .activity-student {
+        color: var(--accent-fine);
+    }
+    
+    .activity-book {
+        color: var(--text-primary);
+    }
+    
+    .activity-date {
+        font-size: 0.6rem;
+        color: var(--text-muted);
+        margin-top: var(--spacing-xs);
+    }
+    
+    .status-badge {
+        display: inline-block;
+        font-size: 0.55rem;
+        padding: 0.15rem 0.4rem;
+        margin-left: var(--spacing-sm);
+        border-left: 2px solid;
+    }
+    
+    .status-borrowed {
+        border-left-color: var(--status-due-soon);
+        color: var(--status-due-soon);
+    }
+    
+    .status-returned {
+        border-left-color: var(--accent-gold);
+        color: var(--accent-gold);
+    }
+    
+    /* Quick actions - minimal */
+    .action-links {
+        display: flex;
+        gap: var(--spacing-md);
+        flex-wrap: wrap;
+        margin-top: var(--spacing-lg);
+        padding-top: var(--spacing-md);
+        border-top: 1px solid var(--border-warm);
+    }
+    
+    .action-links a {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 1px solid var(--border-warm);
+    }
+    
+    .action-links a:hover {
+        border-color: var(--accent-gold);
+        background: rgba(201, 160, 61, 0.05);
+    }
+    
+    .empty-message {
+        text-align: center;
+        padding: var(--spacing-xl);
+        color: var(--text-muted);
+        font-family: 'Fraunces', serif;
+        font-size: 0.8rem;
+    }
+    
+    @media (max-width: 768px) {
+        .stat-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-lg);
+        }
+        
+        .two-column {
+            grid-template-columns: 1fr;
+            gap: var(--spacing-lg);
+        }
+        
+        .dashboard-header {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div>
+    <div class="dashboard-header">
+        <h1>System Overview</h1>
+        <span class="section-count">admin · full access</span>
+    </div>
+    
+    <!-- Stats - compact typography -->
+    <div class="stat-grid">
+        <div class="stat-block">
+            <div class="stat-number">{{ total_books|default:"0" }}</div>
+            <div class="stat-label">total volumes</div>
+            <div class="stat-sub">{{ available_books|default:"0" }} available</div>
+        </div>
+        <div class="stat-block">
+            <div class="stat-number">{{ borrowed_books|default:"0" }}</div>
+            <div class="stat-label">borrowed</div>
+            <div class="stat-sub">currently checked out</div>
+        </div>
+        <div class="stat-block">
+            <div class="stat-number">{{ active_borrows|default:"0" }}</div>
+            <div class="stat-label">active borrows</div>
+            <div class="stat-sub">in circulation</div>
+        </div>
+        <div class="stat-block">
+            <div class="stat-number">{{ total_users|default:"0" }}</div>
+            <div class="stat-label">registered users</div>
+            <div class="stat-sub">{{ total_students|default:"0" }} students</div>
+        </div>
+    </div>
+    
+    <!-- Two-column: User Stats + Recent Activity -->
+    <div class="two-column">
+        <!-- User Statistics Panel -->
+        <div class="info-panel">
+            <div class="panel-header">User Registry</div>
+            <div class="panel-body">
+                <ul class="stat-list">
+                    <li class="stat-list-item">
+                        <span class="stat-list-label">Total Users</span>
+                        <span class="stat-list-value">{{ total_users|default:"0" }}</span>
+                    </li>
+                    <li class="stat-list-item">
+                        <span class="stat-list-label">Students</span>
+                        <span class="stat-list-value">{{ total_students|default:"0" }}</span>
+                    </li>
+                    <li class="stat-list-item">
+                        <span class="stat-list-label">Librarians</span>
+                        <span class="stat-list-value">{{ total_librarians|default:"0" }}</span>
+                    </li>
+                    <li class="stat-list-item">
+                        <span class="stat-list-label">Administrators</span>
+                        <span class="stat-list-value">1</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Recent Activity Panel -->
+        <div class="info-panel">
+            <div class="panel-header">Recent Circulation</div>
+            <div class="panel-body">
+                {% if recent_borrows %}
+                    <ul class="activity-list">
+                        {% for borrow in recent_borrows|slice:":8" %}
+                        <li class="activity-item">
+                            <span class="activity-icon">{% if borrow.is_returned %}📥{% else %}📤{% endif %}</span>
+                            <div class="activity-content">
+                                <span class="activity-student">{{ borrow.student.username }}</span>
+                                <span class="activity-book"> · "{{ borrow.book.title|truncatechars:35 }}"</span>
+                                <div class="activity-date">
+                                    {{ borrow.borrow_date|date:"M d, H:i" }}
+                                    <span class="status-badge {% if borrow.is_returned %}status-returned{% else %}status-borrowed{% endif %}">
+                                        {% if borrow.is_returned %}returned{% else %}borrowed{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% if recent_borrows|length > 8 %}
+                    <div class="empty-message" style="padding-top: var(--spacing-sm);">
+                        + {{ recent_borrows|length|add:"-8" }} more records
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div class="empty-message">✦ No recent activity ✦</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="info-panel">
+        <div class="panel-header">Administration</div>
+        <div class="panel-body">
+            <div class="action-links">
+                <a href="{% url 'add_book' %}">⊕ add new book</a>
+                <a href="{% url 'book_list' %}">📚 manage catalog</a>
+                <a href="{% url 'manage_return_requests' %}">↺ review returns</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

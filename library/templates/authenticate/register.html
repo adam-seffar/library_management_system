@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - LibraryMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow mt-3">
+            <div class="card-header bg-success text-white text-center">
+                <h4><i class="bi bi-person-plus"></i> Student Registration</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" name="username" class="form-control" required>
+                        <small class="text-muted">Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password1" class="form-label">Password</label>
+                        <input type="password" name="password1" class="form-control" required>
+                        <small class="text-muted">Your password can't be too similar to other personal info.</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password2" class="form-label">Confirm Password</label>
+                        <input type="password" name="password2" class="form-control" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-person-plus"></i> Register as Student
+                    </button>
+                </form>
+                
+                <hr>
+                <p class="text-center mb-0">
+                    Already have an account? 
+                    <a href="{% url 'login' %}">Login here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

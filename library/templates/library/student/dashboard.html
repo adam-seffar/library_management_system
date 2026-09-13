@@ -1,0 +1,514 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Reading Ledger · {{ user.username }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Dashboard-specific styles - no cards, no rounded corners */
+    
+    /* Welcome area - like a book inscription */
+    .welcome-inscription {
+        margin-bottom: var(--spacing-2xl);
+        border-bottom: 1px solid var(--border-warm);
+        padding-bottom: var(--spacing-lg);
+    }
+    
+    .welcome-inscription h1 {
+        border-left: 3px solid var(--accent-gold);
+        padding-left: var(--spacing-lg);
+        margin-bottom: var(--spacing-sm);
+        font-size: 2rem;
+    }
+    
+    .inscription-line {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        letter-spacing: 0.05em;
+        margin-top: var(--spacing-sm);
+        padding-left: var(--spacing-lg);
+    }
+    
+    /* Stats as typographic poster - not cards */
+    .stats-typography {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--spacing-lg);
+        margin-bottom: var(--spacing-2xl);
+        padding: var(--spacing-lg) 0;
+        border-top: 1px solid var(--border-warm);
+        border-bottom: 1px solid var(--border-warm);
+    }
+    
+    .stat-ledger {
+        border-left: 1px solid var(--border-warm);
+        padding-left: var(--spacing-lg);
+    }
+    
+    .stat-number {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 2.5rem;
+        font-weight: 500;
+        color: var(--accent-gold);
+        line-height: 1;
+        margin-bottom: var(--spacing-xs);
+    }
+    
+    .stat-label {
+        font-family: 'Fraunces', serif;
+        font-size: 0.7rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+    
+    .stat-note {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.65rem;
+        color: var(--accent-rust);
+        margin-top: var(--spacing-xs);
+    }
+    
+    /* Quick actions - as an index/table of contents */
+    .action-index {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-lg);
+        margin-bottom: var(--spacing-2xl);
+    }
+    
+    .action-entry {
+        border: 1px solid var(--border-warm);
+        padding: var(--spacing-lg);
+        transition: all 0.2s ease;
+        background: var(--bg-card);
+    }
+    
+    .action-entry:hover {
+        border-color: var(--accent-gold);
+        transform: translateX(4px);
+    }
+    
+    .action-symbol {
+        font-size: 1.5rem;
+        margin-bottom: var(--spacing-sm);
+        color: var(--accent-fine);
+    }
+    
+    .action-title {
+        font-family: 'Fraunces', serif;
+        font-size: 1rem;
+        font-weight: 500;
+        margin-bottom: var(--spacing-xs);
+    }
+    
+    .action-desc {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        letter-spacing: 0.02em;
+    }
+    
+    .action-entry a {
+        text-decoration: none;
+        display: block;
+    }
+    
+    /* Borrowed books - reading list aesthetic, not cards */
+    .reading-list-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: var(--spacing-lg);
+        border-bottom: 1px solid var(--border-warm);
+        padding-bottom: var(--spacing-sm);
+    }
+    
+    .reading-list-header h2 {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+        font-size: 1.25rem;
+    }
+    
+    .reading-count {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        color: var(--accent-gold);
+    }
+    
+    .reading-list {
+        list-style: none;
+        margin-bottom: var(--spacing-2xl);
+    }
+    
+    .reading-item {
+        border-bottom: 1px solid var(--border-warm);
+        padding: var(--spacing-lg) 0;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: var(--spacing-md);
+        transition: all 0.15s ease;
+    }
+    
+    .reading-item:hover {
+        background: rgba(201, 160, 61, 0.03);
+        padding-left: var(--spacing-md);
+    }
+    
+    .book-info {
+        flex: 2;
+        min-width: 200px;
+    }
+    
+    .book-title {
+        font-family: 'Fraunces', serif;
+        font-size: 1rem;
+        font-weight: 500;
+        margin-bottom: var(--spacing-xs);
+        color: var(--text-primary);
+    }
+    
+    .book-author {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        letter-spacing: 0.02em;
+    }
+    
+    .borrow-meta {
+        flex: 1;
+        min-width: 180px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+    }
+    
+    .borrow-meta div {
+        margin-bottom: var(--spacing-xs);
+    }
+    
+    .status-badge {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.65rem;
+        letter-spacing: 0.05em;
+        padding: 0.25rem 0.5rem;
+        border-left: 2px solid;
+    }
+    
+    .status-due-soon {
+        border-left-color: var(--status-due-soon);
+        color: var(--status-due-soon);
+    }
+    
+    .status-overdue {
+        border-left-color: var(--status-overdue);
+        color: var(--status-overdue);
+    }
+    
+    .status-ok {
+        border-left-color: var(--text-muted);
+        color: var(--text-secondary);
+    }
+    
+    .reading-actions {
+        flex-shrink: 0;
+    }
+    
+    /* Empty state - poetic */
+    .empty-shelf {
+        text-align: center;
+        padding: var(--spacing-2xl);
+        border: 1px solid var(--border-warm);
+        background: var(--bg-card);
+    }
+    
+    .empty-shelf p {
+        font-family: 'Fraunces', serif;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        font-style: italic;
+    }
+    
+    /* Return history - as a log, not a Bootstrap table */
+    .history-log {
+        border-top: 2px solid var(--border-warm);
+        padding-top: var(--spacing-lg);
+    }
+    
+    .history-log h3 {
+        font-size: 1rem;
+        margin-bottom: var(--spacing-lg);
+        letter-spacing: 0.05em;
+    }
+    
+    .log-entries {
+        list-style: none;
+    }
+    
+    .log-entry {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: var(--spacing-sm) 0;
+        border-bottom: 1px dotted var(--border-warm);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+    }
+    
+    .log-book {
+        color: var(--text-secondary);
+    }
+    
+    .log-date {
+        color: var(--text-muted);
+    }
+    
+    /* Modal - no rounded corners */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 14, 12, 0.95);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal.active {
+        display: flex;
+    }
+    
+    .modal-content {
+        background: var(--bg-elevated);
+        border: 1px solid var(--accent-gold);
+        max-width: 500px;
+        width: 90%;
+        padding: var(--spacing-xl);
+    }
+    
+    .modal-header {
+        margin-bottom: var(--spacing-lg);
+        border-bottom: 1px solid var(--border-warm);
+        padding-bottom: var(--spacing-sm);
+    }
+    
+    .modal-footer {
+        margin-top: var(--spacing-lg);
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--spacing-sm);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .stats-typography {
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-md);
+        }
+        
+        .action-index {
+            grid-template-columns: 1fr;
+        }
+        
+        .reading-item {
+            flex-direction: column;
+        }
+        
+        .borrow-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div>
+    <!-- Welcome inscription - not a "card" -->
+    <div class="welcome-inscription">
+        <h1>Reader's Ledger</h1>
+        <div class="inscription-line">
+            {{ user.get_full_name|default:user.username }} · Member since {{ user.date_joined|date:"F Y" }}
+        </div>
+    </div>
+    
+    <!-- Stats as typographic ledger -->
+    <div class="stats-typography">
+        <div class="stat-ledger">
+            <div class="stat-number">{{ borrowed_books|length }}</div>
+            <div class="stat-label">Current Borrows</div>
+            <div class="stat-note">of 3 maximum</div>
+        </div>
+        <div class="stat-ledger">
+            <div class="stat-number">{{ total_returned }}</div>
+            <div class="stat-label">Returns Completed</div>
+            <div class="stat-note">this term</div>
+        </div>
+        <div class="stat-ledger">
+            <div class="stat-number">{{ pending_returns|length }}</div>
+            <div class="stat-label">Pending Returns</div>
+            <div class="stat-note">awaiting inspection</div>
+        </div>
+        <div class="stat-ledger">
+            <div class="stat-number">{{ remaining_borrows }}</div>
+            <div class="stat-label">Remaining Borrows</div>
+            <div class="stat-note">available this month</div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions as Table of Contents -->
+    <div class="action-index">
+        <div class="action-entry">
+            <a href="{% url 'book_list' %}">
+                <div class="action-symbol">⌕</div>
+                <div class="action-title">Browse Collection</div>
+                <div class="action-desc">Search, discover, reserve</div>
+            </a>
+        </div>
+        <div class="action-entry">
+            <a href="{% url 'chatbot_page' %}">
+                <div class="action-symbol">⌘</div>
+                <div class="action-title">Library Assistant</div>
+                <div class="action-desc">Ask about books & policies</div>
+            </a>
+        </div>
+        <div class="action-entry">
+            <a href="{% url 'my_return_requests' %}">
+                <div class="action-symbol">↺</div>
+                <div class="action-title">Return Requests</div>
+                <div class="action-desc">Track pending returns</div>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Pending Return Alerts - library notice style -->
+    {% if pending_returns %}
+        {% for request in pending_returns %}
+            <div class="alert alert-warning" style="margin-bottom: var(--spacing-md);">
+                <strong>Pending ·</strong> Return request for "<em>{{ request.book.title }}</em>" awaiting approval.
+                <a href="{% url 'my_return_requests' %}" style="margin-left: var(--spacing-sm);">View →</a>
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <!-- Currently Borrowed Books - Reading List -->
+    <div class="reading-list-header">
+        <h2>Currently Borrowed</h2>
+        <span class="reading-count">{{ borrowed_books|length }} volume{% if borrowed_books|length != 1 %}s{% endif %} in possession</span>
+    </div>
+    
+    {% if borrowed_books %}
+        <div class="reading-list">
+            {% for borrow in borrowed_books %}
+            <div class="reading-item">
+                <div class="book-info">
+                    <div class="book-title">{{ borrow.book.title }}</div>
+                    <div class="book-author">{{ borrow.book.author }}</div>
+                </div>
+                <div class="borrow-meta">
+                    <div>Borrowed: {{ borrow.borrow_date|date:"M d, Y" }}</div>
+                    <div>Due: {{ borrow.due_date|date:"M d, Y" }}</div>
+                    <div class="status-badge 
+                        {% if borrow.days_left < 0 %}status-overdue
+                        {% elif borrow.days_left < 3 %}status-due-soon
+                        {% else %}status-ok{% endif %}">
+                        {% if borrow.days_left < 0 %}Overdue by {{ borrow.days_left|stringformat:"d"|slice:"1:" }} days
+                        {% elif borrow.days_left == 0 %}Due today
+                        {% else %}{{ borrow.days_left }} days remaining{% endif %}
+                    </div>
+                </div>
+                <div class="reading-actions">
+                    {% if borrow.has_pending_return_request %}
+                        <button class="btn btn-secondary" disabled style="opacity: 0.5; cursor: not-allowed;">Request Pending</button>
+                    {% else %}
+                        <button class="btn btn-danger" onclick="openReturnModal('{{ borrow.id }}', '{{ borrow.book.title|escapejs }}')">
+                            Request Return
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-shelf">
+            <p>✦ No books currently borrowed ✦</p>
+            <p style="font-size: 0.7rem; margin-top: var(--spacing-sm);">Browse the collection to begin your reading journey.</p>
+            <a href="{% url 'book_list' %}" class="btn" style="margin-top: var(--spacing-md);">Browse Collection →</a>
+        </div>
+    {% endif %}
+    
+    <!-- Return History -->
+    {% if return_history %}
+    <div class="history-log">
+        <h3>Return Log</h3>
+        <ul class="log-entries">
+            {% for record in return_history|slice:":5" %}
+            <li class="log-entry">
+                <span class="log-book">{{ record.book.title }}</span>
+                <span class="log-date">returned {{ record.return_date|date:"M d, Y" }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% if return_history_count > 5 %}
+            <div style="margin-top: var(--spacing-md); text-align: right;">
+                <a href="#" style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;">full log →</a>
+            </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Return Modal (JavaScript controlled) -->
+<div id="returnModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="font-size: 1.1rem;">Request Return</h3>
+        </div>
+        <div class="modal-body">
+            <p>Confirm return request for:</p>
+            <p style="font-family: 'Fraunces', serif; font-weight: 500; margin: var(--spacing-md) 0;" id="modalBookTitle"></p>
+            <div class="alert alert-info" style="margin-top: var(--spacing-md);">
+                <small>Librarians will inspect the book condition before approving. This takes 1–2 days.</small>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeReturnModal()">Cancel</button>
+            <a href="#" id="returnConfirmLink" class="btn">Confirm Return</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openReturnModal(borrowId, bookTitle) {
+        document.getElementById('modalBookTitle').innerText = '"' + bookTitle + '"';
+        document.getElementById('returnConfirmLink').href = "{% url 'return_book' 0 %}".replace('0', borrowId);
+        document.getElementById('returnModal').classList.add('active');
+    }
+    
+    function closeReturnModal() {
+        document.getElementById('returnModal').classList.remove('active');
+    }
+    
+    // Close modal on background click
+    document.getElementById('returnModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeReturnModal();
+        }
+    });
+    
+    // Escape key closes modal
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeReturnModal();
+        }
+    });
+</script>
+{% endblock %}

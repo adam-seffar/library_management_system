@@ -1,0 +1,8 @@
+django
+sentence-transformers
+torch
+chromadb
+psycopg2-binary
+python-dotenv
+numpy
+pandas

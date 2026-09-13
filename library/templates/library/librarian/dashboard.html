@@ -1,0 +1,384 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Librarian · Circulation Desk{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Dashboard - minimal, data-first */
+    
+    .dashboard-header {
+        margin-bottom: var(--spacing-xl);
+        border-bottom: 2px solid var(--border-warm);
+        padding-bottom: var(--spacing-md);
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: var(--spacing-md);
+    }
+    
+    .dashboard-header h1 {
+        border-left: 3px solid var(--accent-gold);
+        padding-left: var(--spacing-lg);
+        margin-bottom: 0;
+        font-size: 1.75rem;
+    }
+    
+    /* Stats as compact typography */
+    .stat-row {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-xl);
+        padding: var(--spacing-md) 0;
+        border-bottom: 1px solid var(--border-warm);
+    }
+    
+    .stat-compact {
+        border-left: 1px solid var(--border-warm);
+        padding-left: var(--spacing-md);
+    }
+    
+    .stat-compact .number {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.75rem;
+        font-weight: 500;
+        color: var(--accent-gold);
+        line-height: 1;
+    }
+    
+    .stat-compact .label {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.6rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-top: var(--spacing-xs);
+    }
+    
+    /* Quick links - horizontal, not cards */
+    .action-strip {
+        display: flex;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-xl);
+        padding-bottom: var(--spacing-md);
+        border-bottom: 1px solid var(--border-warm);
+        flex-wrap: wrap;
+    }
+    
+    .action-strip a {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        letter-spacing: 0.03em;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 1px solid var(--border-warm);
+    }
+    
+    .action-strip a:hover {
+        border-color: var(--accent-gold);
+        background: rgba(201, 160, 61, 0.05);
+    }
+    
+    /* Section styling */
+    .section {
+        margin-bottom: var(--spacing-xl);
+    }
+    
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: var(--spacing-md);
+        border-bottom: 1px dotted var(--border-warm);
+        padding-bottom: var(--spacing-xs);
+    }
+    
+    .section-title {
+        font-family: 'Fraunces', serif;
+        font-size: 0.9rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--accent-fine);
+    }
+    
+    .section-count {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.65rem;
+        color: var(--text-muted);
+    }
+    
+    /* Request list - minimal rows */
+    .request-list, .borrow-list {
+        list-style: none;
+    }
+    
+    .request-row, .borrow-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--spacing-md);
+        padding: var(--spacing-md) 0;
+        border-bottom: 1px solid var(--border-warm);
+    }
+    
+    .request-info, .borrow-info {
+        flex: 2;
+        min-width: 200px;
+    }
+    
+    .request-title, .borrow-title {
+        font-family: 'Fraunces', serif;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    .request-meta, .borrow-meta {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        margin-top: var(--spacing-xs);
+    }
+    
+    .request-dates, .borrow-dates {
+        flex: 1;
+        min-width: 150px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.65rem;
+        color: var(--text-secondary);
+    }
+    
+    .overdue {
+        color: var(--status-overdue);
+    }
+    
+    .due-soon {
+        color: var(--status-due-soon);
+    }
+    
+    /* Recent activity timeline */
+    .activity-list {
+        list-style: none;
+    }
+    
+    .activity-item {
+        display: flex;
+        gap: var(--spacing-md);
+        padding: var(--spacing-sm) 0;
+        border-bottom: 1px dotted var(--border-warm);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+    }
+    
+    .activity-icon {
+        opacity: 0.6;
+    }
+    
+    .activity-text {
+        flex: 1;
+    }
+    
+    .activity-time {
+        color: var(--text-muted);
+    }
+    
+    /* Empty states */
+    .empty-message {
+        text-align: center;
+        padding: var(--spacing-xl);
+        color: var(--text-muted);
+        font-family: 'Fraunces', serif;
+        font-size: 0.8rem;
+    }
+    
+    /* Two-column layout for bottom sections */
+    .two-column {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-xl);
+        margin-bottom: var(--spacing-xl);
+    }
+    
+    @media (max-width: 768px) {
+        .stat-row {
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-md);
+        }
+        
+        .two-column {
+            grid-template-columns: 1fr;
+            gap: var(--spacing-lg);
+        }
+        
+        .request-row, .borrow-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div>
+    <div class="dashboard-header">
+        <h1>Circulation Desk</h1>
+        <span class="section-count">{{ user.get_full_name|default:user.username }} · Librarian</span>
+    </div>
+    
+    <!-- Stats - compact, no cards -->
+    <div class="stat-row">
+        <div class="stat-compact">
+            <div class="number">{{ total_books|default:"0" }}</div>
+            <div class="label">total volumes</div>
+        </div>
+        <div class="stat-compact">
+            <div class="number">{{ available_books|default:"0" }}</div>
+            <div class="label">available</div>
+        </div>
+        <div class="stat-compact">
+            <div class="number">{{ active_borrows_count|default:"0" }}</div>
+            <div class="label">active borrows</div>
+        </div>
+        <div class="stat-compact">
+            <div class="number">{{ pending_returns_count|default:"0" }}</div>
+            <div class="label">pending returns</div>
+        </div>
+        <div class="stat-compact">
+            <div class="number">{{ overdue_books_count|default:"0" }}</div>
+            <div class="label">overdue</div>
+        </div>
+        <div class="stat-compact">
+            <div class="number">{{ total_students|default:"0" }}</div>
+            <div class="label">students</div>
+        </div>
+    </div>
+    
+    <!-- Action strip - no cards -->
+    <div class="action-strip">
+        <a href="{% url 'manage_return_requests' %}">↺ review returns</a>
+        <a href="{% url 'book_list' %}">📚 manage catalog</a>
+        <a href="{% url 'add_book' %}">⊕ add book</a>
+        <a href="{% url 'chatbot_page' %}">⌕ assistant</a>
+    </div>
+    
+    <!-- Pending Returns Section -->
+    <div class="section">
+        <div class="section-header">
+            <span class="section-title">Pending Return Requests</span>
+            {% if pending_returns_count > 0 %}
+            <a href="{% url 'manage_return_requests' %}" style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem;">view all →</a>
+            {% endif %}
+        </div>
+        
+        {% if pending_returns %}
+            <div class="request-list">
+                {% for request in pending_returns|slice:":5" %}
+                <div class="request-row">
+                    <div class="request-info">
+                        <div class="request-title">{{ request.book.title|truncatechars:50 }}</div>
+                        <div class="request-meta">{{ request.student.username }} · {{ request.book.author }}</div>
+                    </div>
+                    <div class="request-dates">
+                        <div>borrowed: {{ request.borrow_record.borrow_date|date:"M d" }}</div>
+                        <div>requested: {{ request.request_date|date:"M d, H:i" }}</div>
+                    </div>
+                    <div>
+                        <a href="{% url 'process_return_request' request.id %}" class="btn" style="padding: 0.25rem 0.75rem; font-size: 0.65rem;">process</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if pending_returns_count > 5 %}
+            <div style="text-align: center; margin-top: var(--spacing-md);">
+                <span class="section-count">+ {{ pending_returns_count|add:"-5" }} more pending</span>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="empty-message">✦ No pending return requests ✦</div>
+        {% endif %}
+    </div>
+    
+    <!-- Two-column: Active Borrows + Recent Activity -->
+    <div class="two-column">
+        <!-- Active Borrows -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-title">Currently Borrowed</span>
+                <span class="section-count">{{ active_borrows_count }} active</span>
+            </div>
+            
+            {% if active_borrows %}
+                <div class="borrow-list">
+                    {% for borrow in active_borrows|slice:":8" %}
+                    <div class="borrow-row">
+                        <div class="borrow-info">
+                            <div class="borrow-title">{{ borrow.book.title|truncatechars:40 }}</div>
+                            <div class="borrow-meta">{{ borrow.student.username }}</div>
+                        </div>
+                        <div class="borrow-dates">
+                            <div>due: {{ borrow.due_date|date:"M d, Y" }}</div>
+                            <div class="{% if borrow.is_overdue %}overdue{% elif borrow.days_left < 3 %}due-soon{% endif %}">
+                                {% if borrow.is_overdue %}overdue{% elif borrow.days_left < 3 %}due soon{% else %}{{ borrow.days_left }} days{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if active_borrows_count > 8 %}
+                <div class="empty-message" style="padding-top: var(--spacing-sm);">+ {{ active_borrows_count|add:"-8" }} more</div>
+                {% endif %}
+            {% else %}
+                <div class="empty-message">✦ No active borrows ✦</div>
+            {% endif %}
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-title">Recent Activity</span>
+            </div>
+            
+            {% if recent_activity %}
+                <ul class="activity-list">
+                    {% for activity in recent_activity|slice:":8" %}
+                    <li class="activity-item">
+                        <span class="activity-icon">
+                            {% if activity.type == 'borrow' %}📤
+                            {% elif activity.type == 'return' %}📥
+                            {% elif activity.type == 'add' %}⊕
+                            {% else %}○{% endif %}
+                        </span>
+                        <span class="activity-text">
+                            {{ activity.student }} · {{ activity.action }}<br>
+                            <span style="font-size: 0.6rem;">"{{ activity.book_title|truncatechars:35 }}"</span>
+                        </span>
+                        <span class="activity-time">{{ activity.timestamp|timesince }} ago</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="empty-message">✦ No recent activity ✦</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Popular Books (optional, compact) -->
+    {% if popular_books %}
+    <div class="section">
+        <div class="section-header">
+            <span class="section-title">Most Borrowed</span>
+        </div>
+        <div style="display: flex; gap: var(--spacing-lg); flex-wrap: wrap;">
+            {% for book in popular_books|slice:":6" %}
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;">
+                <span style="color: var(--accent-gold);">{{ forloop.counter }}.</span>
+                {{ book.title|truncatechars:30 }}
+                <span class="section-count">({{ book.borrow_count }} borrows)</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

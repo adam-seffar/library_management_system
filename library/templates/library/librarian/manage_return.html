@@ -1,0 +1,397 @@
+{% extends 'base.html' %}
+
+{% block title %}Return Queue · Circulation Desk{% endblock %}
+
+{% block extra_css %}
+<style>
+    .queue-header {
+        display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+        margin-bottom: var(--spacing-xl);
+        border-bottom: 2px solid var(--border-warm);
+        padding-bottom: var(--spacing-md);
+        flex-wrap: wrap;
+        gap: var(--spacing-md);
+    }
+    
+    .queue-header h1 {
+        border-left: 3px solid var(--accent-gold);
+        padding-left: var(--spacing-lg);
+        margin-bottom: 0;
+        font-size: 1.75rem;
+    }
+    
+    /* Queue stats - minimal */
+    .queue-stats {
+        display: flex;
+        gap: var(--spacing-xl);
+        margin-bottom: var(--spacing-xl);
+        padding: var(--spacing-md) 0;
+        border-bottom: 1px solid var(--border-warm);
+    }
+    
+    .queue-stat {
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .queue-stat .number {
+        font-size: 1.5rem;
+        font-weight: 500;
+        color: var(--accent-gold);
+    }
+    
+    .queue-stat .label {
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        margin-left: var(--spacing-sm);
+    }
+    
+    /* Request queue - ledger style */
+    .request-queue {
+        margin-bottom: var(--spacing-2xl);
+    }
+    
+    .request-queue .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: var(--spacing-md);
+        border-bottom: 1px dotted var(--border-warm);
+        padding-bottom: var(--spacing-xs);
+    }
+    
+    .section-title {
+        font-family: 'Fraunces', serif;
+        font-size: 0.9rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--accent-fine);
+    }
+    
+    .request-list {
+        list-style: none;
+    }
+    
+    .request-card {
+        border: 1px solid var(--border-warm);
+        margin-bottom: var(--spacing-md);
+        padding: var(--spacing-lg);
+        background: var(--bg-card);
+        transition: all 0.15s ease;
+    }
+    
+    .request-card:hover {
+        border-color: var(--accent-gold);
+        background: rgba(201, 160, 61, 0.02);
+    }
+    
+    .request-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--spacing-lg);
+        align-items: flex-start;
+    }
+    
+    .request-student {
+        flex: 1.5;
+        min-width: 180px;
+    }
+    
+    .request-book {
+        flex: 2;
+        min-width: 200px;
+    }
+    
+    .request-dates {
+        flex: 1;
+        min-width: 160px;
+    }
+    
+    .request-status {
+        flex-shrink: 0;
+    }
+    
+    .student-name {
+        font-family: 'Fraunces', serif;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    
+    .student-email {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        margin-top: var(--spacing-xs);
+    }
+    
+    .book-title {
+        font-family: 'Fraunces', serif;
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-bottom: var(--spacing-xs);
+    }
+    
+    .book-author {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.65rem;
+        color: var(--text-muted);
+    }
+    
+    .date-label {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.6rem;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+    
+    .date-value {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        margin-top: var(--spacing-xs);
+    }
+    
+    .overdue-badge {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.6rem;
+        padding: 0.25rem 0.5rem;
+        background: rgba(184, 92, 56, 0.15);
+        color: var(--status-overdue);
+        border-left: 2px solid var(--status-overdue);
+        margin-top: var(--spacing-xs);
+        display: inline-block;
+    }
+    
+    /* History sections - two column */
+    .history-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-xl);
+        margin-bottom: var(--spacing-xl);
+    }
+    
+    .history-section {
+        border-top: 1px solid var(--border-warm);
+        padding-top: var(--spacing-lg);
+    }
+    
+    .history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: var(--spacing-md);
+        border-bottom: 1px dotted var(--border-warm);
+        padding-bottom: var(--spacing-xs);
+    }
+    
+    .history-title {
+        font-family: 'Fraunces', serif;
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+    }
+    
+    .history-list {
+        list-style: none;
+    }
+    
+    .history-item {
+        padding: var(--spacing-sm) 0;
+        border-bottom: 1px dotted var(--border-warm);
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: var(--spacing-md);
+        flex-wrap: wrap;
+    }
+    
+    .history-book {
+        flex: 2;
+        font-family: 'Fraunces', serif;
+        font-size: 0.8rem;
+    }
+    
+    .history-student {
+        flex: 1;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.65rem;
+        color: var(--text-muted);
+    }
+    
+    .history-date {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.6rem;
+        color: var(--text-muted);
+    }
+    
+    .history-note {
+        width: 100%;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.6rem;
+        color: var(--accent-rust);
+        margin-top: var(--spacing-xs);
+        padding-left: var(--spacing-md);
+        border-left: 1px solid var(--border-warm);
+    }
+    
+    .empty-message {
+        text-align: center;
+        padding: var(--spacing-xl);
+        color: var(--text-muted);
+        font-family: 'Fraunces', serif;
+        font-size: 0.8rem;
+        border: 1px solid var(--border-warm);
+        background: var(--bg-card);
+    }
+    
+    @media (max-width: 768px) {
+        .request-grid {
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+        
+        .history-grid {
+            grid-template-columns: 1fr;
+            gap: var(--spacing-lg);
+        }
+        
+        .queue-stats {
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div>
+    <div class="queue-header">
+        <h1>Return Queue</h1>
+        <a href="{% url 'librarian_dashboard' %}" class="btn btn-secondary" style="font-size: 0.7rem;">← Dashboard</a>
+    </div>
+    
+    <!-- Queue Stats -->
+    <div class="queue-stats">
+        <div class="queue-stat">
+            <span class="number">{{ pending_requests|length }}</span>
+            <span class="label">pending review</span>
+        </div>
+        <div class="queue-stat">
+            <span class="number">{{ approved_requests|length }}</span>
+            <span class="label">approved this period</span>
+        </div>
+        <div class="queue-stat">
+            <span class="number">{{ rejected_requests|length }}</span>
+            <span class="label">rejected</span>
+        </div>
+    </div>
+    
+    <!-- Pending Requests Section -->
+    <div class="request-queue">
+        <div class="section-header">
+            <span class="section-title">Awaiting Inspection</span>
+            <span class="section-count">{{ pending_requests|length }} request{% if pending_requests|length != 1 %}s{% endif %}</span>
+        </div>
+        
+        {% if pending_requests %}
+            <div class="request-list">
+                {% for request in pending_requests %}
+                <div class="request-card">
+                    <div class="request-grid">
+                        <div class="request-student">
+                            <div class="student-name">{{ request.student.get_full_name|default:request.student.username }}</div>
+                            <div class="student-email">{{ request.student.email|default:"no email on record" }}</div>
+                        </div>
+                        
+                        <div class="request-book">
+                            <div class="book-title">{{ request.book.title }}</div>
+                            <div class="book-author">{{ request.book.author }}</div>
+                            {% if request.borrow_record.borrow_date|timesince > "14 days" %}
+                            <div class="overdue-badge">overdue</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="request-dates">
+                            <div>
+                                <div class="date-label">borrowed</div>
+                                <div class="date-value">{{ request.borrow_record.borrow_date|date:"M d, Y" }}</div>
+                            </div>
+                            <div style="margin-top: var(--spacing-sm);">
+                                <div class="date-label">requested</div>
+                                <div class="date-value">{{ request.request_date|date:"M d, Y · H:i" }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="request-status">
+                            <a href="{% url 'process_return_request' request.id %}" class="btn" style="padding: 0.5rem 1rem;">
+                                inspect →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-message">
+                ✦ No pending return requests ✦
+                <p style="font-size: 0.7rem; margin-top: var(--spacing-sm);">All returns have been processed.</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- History: Approved & Rejected -->
+    <div class="history-grid">
+        <!-- Approved Requests -->
+        <div class="history-section">
+            <div class="history-header">
+                <span class="history-title">✓ Approved Returns</span>
+                <span class="section-count">{{ approved_requests|length }} completed</span>
+            </div>
+            
+            {% if approved_requests %}
+                <ul class="history-list">
+                    {% for request in approved_requests %}
+                    <li class="history-item">
+                        <div class="history-book">{{ request.book.title|truncatechars:40 }}</div>
+                        <div class="history-student">{{ request.student.username }}</div>
+                        <div class="history-date">{{ request.approved_date|date:"M d" }}</div>
+                        {% if request.librarian_notes %}
+                        <div class="history-note">{{ request.librarian_notes|truncatechars:60 }}</div>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="empty-message" style="padding: var(--spacing-lg);">No approved returns yet</div>
+            {% endif %}
+        </div>
+        
+        <!-- Rejected Requests -->
+        <div class="history-section">
+            <div class="history-header">
+                <span class="history-title">✗ Rejected Returns</span>
+                <span class="section-count">{{ rejected_requests|length }} requests</span>
+            </div>
+            
+            {% if rejected_requests %}
+                <ul class="history-list">
+                    {% for request in rejected_requests %}
+                    <li class="history-item">
+                        <div class="history-book">{{ request.book.title|truncatechars:40 }}</div>
+                        <div class="history-student">{{ request.student.username }}</div>
+                        <div class="history-date">{{ request.approved_date|date:"M d" }}</div>
+                        {% if request.librarian_notes %}
+                        <div class="history-note">⚠ {{ request.librarian_notes|truncatechars:60 }}</div>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="empty-message" style="padding: var(--spacing-lg);">No rejected returns</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

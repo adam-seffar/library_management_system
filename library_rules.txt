@@ -1,0 +1,23 @@
+LIBRARY HOURS
+The library is open Monday to Friday from 9:00 AM to 8:00 PM, Saturday from 10:00 AM to 6:00 PM, and closed on Sunday. The library is closed on major holidays including Christmas, New Year's Day, and Thanksgiving.
+
+BORROWING LIMITS
+Students can borrow up to 3 books at a time. The loan period is 14 days from the borrow date. Books can be renewed once for an additional 7 days if no other student has placed a hold on them.
+
+LATE FEES
+Late returns incur a fee of $1 per day per book. Fees are calculated from the due date until the book is returned. Maximum late fee per book is $30.
+
+BOOK CONDITIONS
+Books must be returned in good condition. Lost books require replacement cost plus a $5 processing fee. Damaged books will be assessed on a case-by-case basis by the librarian.
+
+RETURN PROCESS
+To return a book, submit a return request through your dashboard. A librarian will inspect the book and approve the return within 1-2 business days. After approval, the book is removed from your borrowed list.
+
+RECOMMENDATIONS
+The library has books across various genres including Fantasy, Science Fiction, Mystery, Romance, Thriller, Horror, Biography, History, and Non-fiction. You can ask for personalized recommendations based on your reading preferences.
+
+CONTACT INFORMATION
+For questions, contact the library at library@example.com or call (555) 123-4567. You can also visit the library in person during business hours.
+
+STUDENT RESPONSIBILITIES
+Students must keep their library cards safe, report lost books immediately, and respect all library rules. No food or drinks are allowed near books.

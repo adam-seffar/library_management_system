@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Decommission · {{ book.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .decommission-container {
+        max-width: 550px;
+        margin: var(--spacing-2xl) auto;
+    }
+    
+    .warning-panel {
+        border: 1px solid var(--status-overdue);
+        background: rgba(184, 92, 56, 0.02);
+        text-align: center;
+        padding: var(--spacing-xl);
+    }
+    
+    .warning-symbol {
+        font-size: 3.5rem;
+        margin-bottom: var(--spacing-lg);
+        opacity: 0.7;
+    }
+    
+    .warning-panel h2 {
+        font-size: 1.25rem;
+        border-bottom: none;
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .book-details {
+        margin: var(--spacing-lg) 0;
+        padding: var(--spacing-lg);
+        background: var(--bg-surface);
+        border-left: 3px solid var(--accent-gold);
+    }
+    
+    .book-title {
+        font-family: 'Fraunces', serif;
+        font-size: 1rem;
+        font-weight: 500;
+        margin-bottom: var(--spacing-xs);
+    }
+    
+    .book-meta {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        color: var(--text-muted);
+    }
+    
+    .warning-message {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        color: var(--status-overdue);
+        margin: var(--spacing-lg) 0;
+        padding: var(--spacing-md);
+        border-top: 1px solid var(--border-warm);
+        border-bottom: 1px solid var(--border-warm);
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: var(--spacing-md);
+        justify-content: center;
+        margin-top: var(--spacing-xl);
+    }
+    
+    hr {
+        border: none;
+        border-top: 1px solid var(--border-warm);
+        margin: var(--spacing-lg) 0;
+    }
+    
+    @media (max-width: 768px) {
+        .decommission-container {
+            margin: var(--spacing-md);
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .action-buttons .btn {
+            width: 100%;
+            text-align: center;
+        }
+        
+        .warning-panel {
+            padding: var(--spacing-lg);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="decommission-container">
+    <div class="warning-panel">
+        <div class="warning-symbol">⚠</div>
+        <h2>Decommission Record</h2>
+        
+        <div class="book-details">
+            <div class="book-title">“{{ book.title }}”</div>
+            <div class="book-meta">{{ book.author }}</div>
+            {% if book.isbn %}
+            <div class="book-meta" style="margin-top: var(--spacing-xs);">ISBN: {{ book.isbn }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="warning-message">
+            This action is permanent.
+            <br>
+            All borrow records associated with this title will be affected.
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="action-buttons">
+                <button type="submit" class="btn btn-danger">Permanently Delete</button>
+                <a href="{% url 'book_list' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

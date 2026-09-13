@@ -1,0 +1,569 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Reference Desk · Library Assistant{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Chat layout - like a librarian's correspondence desk */
+    .chat-layout {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 180px);
+        min-height: 500px;
+    }
+    
+    .chat-header {
+        margin-bottom: var(--spacing-lg);
+        border-bottom: 2px solid var(--border-warm);
+        padding-bottom: var(--spacing-md);
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: var(--spacing-md);
+    }
+    
+    .chat-header h1 {
+        border-left: 3px solid var(--accent-gold);
+        padding-left: var(--spacing-lg);
+        margin-bottom: 0;
+        font-size: 1.5rem;
+    }
+    
+    .clear-btn {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.65rem;
+        padding: 0.375rem 0.875rem;
+        border: 1px solid var(--border-warm);
+        background: transparent;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    
+    .clear-btn:hover {
+        border-color: var(--status-overdue);
+        color: var(--status-overdue);
+    }
+    
+    /* Chat container - like a reading nook / reference desk */
+    .chat-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--border-warm);
+        background: var(--bg-card);
+        overflow: hidden;
+    }
+    
+    /* Messages area - like a ledger of correspondence */
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: var(--spacing-xl);
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-lg);
+    }
+    
+    /* Custom scrollbar for messages */
+    .chat-messages::-webkit-scrollbar {
+        width: 4px;
+    }
+    
+    .chat-messages::-webkit-scrollbar-track {
+        background: var(--bg-deep);
+    }
+    
+    .chat-messages::-webkit-scrollbar-thumb {
+        background: var(--accent-rust);
+    }
+    
+    /* Message styling - correspondence aesthetic, no bubbles */
+    .message {
+        display: flex;
+        flex-direction: column;
+        max-width: 75%;
+        animation: slideIn 0.25s ease;
+    }
+    
+    .message.user {
+        align-self: flex-end;
+        align-items: flex-end;
+    }
+    
+    .message.bot {
+        align-self: flex-start;
+        align-items: flex-start;
+    }
+    
+    /* Sender line - like letterhead */
+    .message-sender {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.6rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: var(--spacing-xs);
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+    }
+    
+    .message.user .message-sender {
+        color: var(--accent-gold);
+    }
+    
+    .message.bot .message-sender {
+        color: var(--text-muted);
+    }
+    
+    .message-sender::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--border-warm);
+        min-width: 30px;
+    }
+    
+    .message.user .message-sender::after {
+        order: -1;
+        margin-right: var(--spacing-sm);
+    }
+    
+    .message.bot .message-sender::before {
+        content: '';
+        width: 20px;
+        height: 1px;
+        background: var(--border-warm);
+        margin-right: var(--spacing-sm);
+    }
+    
+    /* Message content - like typed correspondence */
+    .message-content {
+        font-family: 'Fraunces', serif;
+        font-size: 0.85rem;
+        line-height: 1.6;
+        padding: var(--spacing-md) var(--spacing-lg);
+        background: var(--bg-surface);
+        border-left: 2px solid;
+    }
+    
+    .message.user .message-content {
+        border-left-color: var(--accent-gold);
+        background: rgba(201, 160, 61, 0.04);
+    }
+    
+    .message.bot .message-content {
+        border-left-color: var(--text-muted);
+    }
+    
+    .message-content strong {
+        color: var(--accent-fine);
+        font-weight: 600;
+    }
+    
+    .message-content ul, 
+    .message-content ol {
+        margin: var(--spacing-sm) 0;
+        padding-left: var(--spacing-lg);
+    }
+    
+    .message-content li {
+        margin: var(--spacing-xs) 0;
+    }
+    
+    .message-time {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.55rem;
+        color: var(--text-muted);
+        margin-top: var(--spacing-xs);
+        opacity: 0.7;
+    }
+    
+    /* Typing indicator - minimalist pulse */
+    .typing-indicator {
+        display: flex;
+        gap: var(--spacing-xs);
+        padding: var(--spacing-md) var(--spacing-lg);
+        background: var(--bg-surface);
+        border-left: 2px solid var(--text-muted);
+    }
+    
+    .typing-indicator span {
+        width: 6px;
+        height: 6px;
+        background: var(--text-muted);
+        opacity: 0.4;
+        animation: pulse 1.2s infinite ease-in-out;
+    }
+    
+    .typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    
+    .typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    
+    @keyframes pulse {
+        0%, 60%, 100% {
+            opacity: 0.2;
+            transform: translateY(0);
+        }
+        30% {
+            opacity: 1;
+            transform: translateY(-6px);
+        }
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Input area - like a reply form */
+    .chat-input-area {
+        border-top: 1px solid var(--border-warm);
+        padding: var(--spacing-lg);
+        background: var(--bg-card);
+    }
+    
+    /* Suggestion buttons - like catalog cards */
+    .suggestion-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-md);
+        padding-bottom: var(--spacing-md);
+        border-bottom: 1px dotted var(--border-warm);
+    }
+    
+    .suggestion-btn {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.65rem;
+        padding: 0.375rem 0.875rem;
+        background: transparent;
+        border: 1px solid var(--border-warm);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    
+    .suggestion-btn:hover {
+        border-color: var(--accent-gold);
+        color: var(--accent-gold);
+        background: rgba(201, 160, 61, 0.05);
+    }
+    
+    /* Input form */
+    .chat-form {
+        display: flex;
+        gap: var(--spacing-md);
+    }
+    
+    .chat-input {
+        flex: 1;
+        font-family: 'Fraunces', serif;
+        font-size: 0.85rem;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-warm);
+        padding: 0.75rem 1rem;
+        color: var(--text-primary);
+    }
+    
+    .chat-input:focus {
+        outline: none;
+        border-color: var(--accent-gold);
+    }
+    
+    .chat-input::placeholder {
+        color: var(--text-muted);
+        font-family: 'Fraunces', serif;
+        font-style: italic;
+        font-size: 0.8rem;
+    }
+    
+    .chat-submit {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        letter-spacing: 0.05em;
+        padding: 0 1.5rem;
+        text-transform: uppercase;
+    }
+    
+    /* Empty / welcome state */
+    .welcome-message {
+        max-width: 80%;
+        margin: 0 auto;
+        text-align: center;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .chat-layout {
+            height: calc(100vh - 140px);
+        }
+        
+        .message {
+            max-width: 90%;
+        }
+        
+        .chat-messages {
+            padding: var(--spacing-md);
+        }
+        
+        .message-content {
+            padding: var(--spacing-sm) var(--spacing-md);
+            font-size: 0.8rem;
+        }
+        
+        .suggestion-strip {
+            gap: var(--spacing-xs);
+        }
+        
+        .suggestion-btn {
+            font-size: 0.6rem;
+            padding: 0.25rem 0.625rem;
+        }
+        
+        .chat-input {
+            font-size: 0.8rem;
+        }
+        
+        .chat-submit {
+            padding: 0 1rem;
+        }
+        
+        .message-sender {
+            font-size: 0.55rem;
+        }
+    }
+    
+    /* For very small devices */
+    @media (max-width: 480px) {
+        .chat-form {
+            flex-direction: column;
+        }
+        
+        .chat-submit {
+            padding: 0.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-layout">
+    <div class="chat-header">
+        <h1>Reference Desk</h1>
+        <button class="clear-btn" onclick="clearChat()">clear conversation</button>
+    </div>
+    
+    <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                <div class="message-sender">reference assistant</div>
+                <div class="message-content">
+                    Good day. I'm the library reference assistant.
+                    <br><br>
+                    I can help with:
+                    <ul>
+                        <li><strong>Book recommendations</strong> — "Recommend a fantasy novel"</li>
+                        <li><strong>Catalog information</strong> — "Tell me about Dune"</li>
+                        <li><strong>Account status</strong> — "When are my books due?"</li>
+                        <li><strong>Library policies</strong> — "How many books can I borrow?"</li>
+                        <li><strong>Search assistance</strong> — "Find books by Ursula Le Guin"</li>
+                    </ul>
+                    What would you like to know?
+                </div>
+                <div class="message-time">{{ now|time:"H:i" }}</div>
+            </div>
+        </div>
+        
+        <div class="chat-input-area">
+            <div class="suggestion-strip">
+                <button class="suggestion-btn" onclick="sendSuggestion('Recommend me a fantasy book')">📚 fantasy</button>
+                <button class="suggestion-btn" onclick="sendSuggestion('How many books can I borrow at once?')">📖 borrowing limit</button>
+                <button class="suggestion-btn" onclick="sendSuggestion('When are my books due?')">📅 due dates</button>
+                <button class="suggestion-btn" onclick="sendSuggestion('Tell me about Dune')">📖 Dune</button>
+                <button class="suggestion-btn" onclick="sendSuggestion('Library hours and location')">🕒 hours</button>
+            </div>
+            
+            <form id="chatForm" class="chat-form">
+                {% csrf_token %}
+                <input type="text" 
+                       id="userInput" 
+                       class="chat-input" 
+                       placeholder="Ask a question..."
+                       autocomplete="off">
+                <button type="submit" class="chat-submit btn">send</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const chatMessages = document.getElementById('chatMessages');
+    const userInput = document.getElementById('userInput');
+    const chatForm = document.getElementById('chatForm');
+    
+    // Load chat history from session storage
+    let chatHistory = JSON.parse(sessionStorage.getItem('chatHistory') || '[]');
+    
+    function formatTime() {
+        const now = new Date();
+        return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML();
+    }
+    
+    function formatMessageContent(content) {
+        // Format markdown-style bold
+        let formatted = content
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\n/g, '<br>')
+            // Preserve emoji and common symbols
+            .replace(/✅/g, '✓')
+            .replace(/❌/g, '✗')
+            // Format lists (simple)
+            .replace(/•\s/g, '→ ');
+        
+        // Handle unordered lists
+        if (formatted.includes('<br>•') || formatted.includes('\n•')) {
+            formatted = formatted.replace(/<br>•/g, '<br>→');
+        }
+        
+        return formatted;
+    }
+    
+    function addMessage(role, content, time = null) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${role}`;
+        
+        const timeString = time || formatTime();
+        const senderLabel = role === 'bot' ? 'reference assistant' : 'you';
+        const formattedContent = formatMessageContent(content);
+        
+        messageDiv.innerHTML = `
+            <div class="message-sender">${senderLabel}</div>
+            <div class="message-content">${formattedContent}</div>
+            <div class="message-time">${timeString}</div>
+        `;
+        
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    function showTypingIndicator() {
+        const indicatorDiv = document.createElement('div');
+        indicatorDiv.className = 'message bot';
+        indicatorDiv.id = 'typingIndicator';
+        indicatorDiv.innerHTML = `
+            <div class="message-sender">reference assistant</div>
+            <div class="typing-indicator">
+                <span>●</span><span>●</span><span>●</span>
+            </div>
+        `;
+        chatMessages.appendChild(indicatorDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    function removeTypingIndicator() {
+        const indicator = document.getElementById('typingIndicator');
+        if (indicator) indicator.remove();
+    }
+    
+    async function sendMessage(query) {
+        if (!query.trim()) return;
+        
+        const time = formatTime();
+        addMessage('user', query, time);
+        
+        chatHistory.push({ role: 'user', content: query, time: time });
+        // Keep last 100 messages
+        if (chatHistory.length > 100) {
+            chatHistory = chatHistory.slice(-100);
+        }
+        sessionStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+        
+        userInput.value = '';
+        showTypingIndicator();
+        
+        try {
+            const response = await fetch('/chatbot/ask/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: `query=${encodeURIComponent(query)}`
+            });
+            
+            const data = await response.json();
+            removeTypingIndicator();
+            
+            const botTime = formatTime();
+            addMessage('bot', data.response, botTime);
+            
+            chatHistory.push({ role: 'bot', content: data.response, time: botTime });
+            if (chatHistory.length > 100) {
+                chatHistory = chatHistory.slice(-100);
+            }
+            sessionStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+            
+        } catch (error) {
+            removeTypingIndicator();
+            addMessage('bot', 'Apologies — I encountered an error. Please try again.');
+            console.error('Chat error:', error);
+        }
+    }
+    
+    function sendSuggestion(query) {
+        sendMessage(query);
+    }
+    
+    function clearChat() {
+        if (confirm('Clear this conversation?')) {
+            chatHistory = [];
+            sessionStorage.removeItem('chatHistory');
+            chatMessages.innerHTML = '';
+            addMessage('bot', 'Conversation cleared. How may I assist you?');
+        }
+    }
+    
+    chatForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        sendMessage(userInput.value);
+    });
+    
+    userInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            sendMessage(userInput.value);
+        }
+    });
+    
+    // Load chat history on page load
+    if (chatHistory.length === 0) {
+        // Keep the welcome message — don't reload anything
+    } else {
+        chatMessages.innerHTML = '';
+        chatHistory.forEach(msg => {
+            addMessage(msg.role, msg.content, msg.time);
+        });
+    }
+</script>
+{% endblock %}

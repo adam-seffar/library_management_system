@@ -1,0 +1,365 @@
+{% extends 'base.html' %}
+
+{% block title %}Circulation Ledger · Return Requests{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Request ledger styling - like library circulation desk records */
+    
+    .ledger-header {
+        display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+        margin-bottom: var(--spacing-xl);
+        border-bottom: 2px solid var(--border-warm);
+        padding-bottom: var(--spacing-md);
+        flex-wrap: wrap;
+        gap: var(--spacing-md);
+    }
+    
+    .ledger-header h1 {
+        border-left: 3px solid var(--accent-gold);
+        padding-left: var(--spacing-lg);
+        margin-bottom: 0;
+        font-size: 1.75rem;
+    }
+    
+    /* Request sections - like archival folders */
+    .request-section {
+        margin-bottom: var(--spacing-2xl);
+    }
+    
+    .section-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: var(--spacing-lg);
+        border-bottom: 1px dotted var(--border-warm);
+        padding-bottom: var(--spacing-sm);
+    }
+    
+    .section-title {
+        font-family: 'Fraunces', serif;
+        font-size: 1.1rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--accent-fine);
+    }
+    
+    .section-count {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.65rem;
+        color: var(--text-muted);
+    }
+    
+    /* Request entries - as ledger rows */
+    .request-list {
+        list-style: none;
+    }
+    
+    .request-entry {
+        border-bottom: 1px solid var(--border-warm);
+        padding: var(--spacing-md) 0;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--spacing-md);
+        transition: background 0.15s ease;
+    }
+    
+    .request-entry:hover {
+        background: rgba(201, 160, 61, 0.03);
+        padding-left: var(--spacing-md);
+    }
+    
+    .request-book {
+        flex: 2;
+        min-width: 200px;
+    }
+    
+    .request-title {
+        font-family: 'Fraunces', serif;
+        font-size: 0.95rem;
+        font-weight: 500;
+        margin-bottom: var(--spacing-xs);
+    }
+    
+    .request-author {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.65rem;
+        color: var(--text-muted);
+    }
+    
+    .request-details {
+        flex: 1;
+        min-width: 160px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+    }
+    
+    .request-details div {
+        margin-bottom: var(--spacing-xs);
+    }
+    
+    .request-status {
+        flex: 0.5;
+        min-width: 100px;
+    }
+    
+    .status-pending {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.65rem;
+        letter-spacing: 0.05em;
+        padding: 0.25rem 0.5rem;
+        border-left: 2px solid var(--status-due-soon);
+        color: var(--status-due-soon);
+    }
+    
+    .status-approved {
+        border-left-color: var(--accent-gold);
+        color: var(--accent-gold);
+    }
+    
+    .status-rejected {
+        border-left-color: var(--status-overdue);
+        color: var(--status-overdue);
+    }
+    
+    .request-actions {
+        flex-shrink: 0;
+    }
+    
+    .librarian-note {
+        font-family: 'Fraunces', serif;
+        font-style: italic;
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        margin-top: var(--spacing-xs);
+        padding-left: var(--spacing-md);
+        border-left: 1px solid var(--border-warm);
+    }
+    
+    /* Empty state */
+    .empty-ledger {
+        text-align: center;
+        padding: var(--spacing-2xl);
+        border: 1px solid var(--border-warm);
+        background: var(--bg-card);
+    }
+    
+    .empty-ledger p {
+        font-family: 'Fraunces', serif;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+    }
+    
+    /* Modal */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 14, 12, 0.96);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal.active {
+        display: flex;
+    }
+    
+    .modal-content {
+        background: var(--bg-elevated);
+        border: 1px solid var(--accent-gold);
+        max-width: 450px;
+        width: 90%;
+        padding: var(--spacing-xl);
+    }
+    
+    .modal-content p {
+        margin: var(--spacing-md) 0;
+    }
+    
+    .modal-book {
+        font-family: 'Fraunces', serif;
+        font-weight: 500;
+        color: var(--accent-fine);
+    }
+    
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--spacing-md);
+        margin-top: var(--spacing-lg);
+    }
+    
+    @media (max-width: 768px) {
+        .request-entry {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .ledger-header {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div>
+    <div class="ledger-header">
+        <h1>Circulation Ledger</h1>
+        <a href="{% url 'student_dashboard' %}" class="btn btn-secondary" style="font-size: 0.7rem;">← Return to Dashboard</a>
+    </div>
+    
+    <!-- Pending Requests Section -->
+    <div class="request-section">
+        <div class="section-header">
+            <span class="section-title">Pending Returns</span>
+            <span class="section-count">{{ pending_requests|length }} request{% if pending_requests|length != 1 %}s{% endif %} awaiting review</span>
+        </div>
+        
+        {% if pending_requests %}
+            <ul class="request-list">
+                {% for request in pending_requests %}
+                <li class="request-entry">
+                    <div class="request-book">
+                        <div class="request-title">{{ request.book.title }}</div>
+                        <div class="request-author">{{ request.book.author }}</div>
+                    </div>
+                    <div class="request-details">
+                        <div>Requested: {{ request.request_date|date:"M d, Y · H:i" }}</div>
+                        <div>Borrowed: {{ request.borrow_record.borrow_date|date:"M d, Y"|default:"—" }}</div>
+                    </div>
+                    <div class="request-status">
+                        <span class="status-pending">pending</span>
+                    </div>
+                    <div class="request-actions">
+                        <button class="btn btn-danger" onclick="openCancelModal('{{ request.id }}', '{{ request.book.title|escapejs }}')" style="padding: 0.375rem 0.875rem; font-size: 0.65rem;">
+                            cancel
+                        </button>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="empty-ledger">
+                <p>✦ No pending return requests ✦</p>
+                <p style="font-size: 0.7rem; margin-top: var(--spacing-sm);">All borrowed books are currently in your possession.</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Approved Requests -->
+    {% if approved_requests %}
+    <div class="request-section">
+        <div class="section-header">
+            <span class="section-title">Approved Returns</span>
+            <span class="section-count">{{ approved_requests|length }} completed</span>
+        </div>
+        
+        <ul class="request-list">
+            {% for request in approved_requests %}
+            <li class="request-entry">
+                <div class="request-book">
+                    <div class="request-title">{{ request.book.title }}</div>
+                    <div class="request-author">{{ request.book.author }}</div>
+                </div>
+                <div class="request-details">
+                    <div>Requested: {{ request.request_date|date:"M d, Y" }}</div>
+                    <div>Approved: {{ request.approved_date|date:"M d, Y" }}</div>
+                </div>
+                <div class="request-status">
+                    <span class="status-approved">approved</span>
+                </div>
+                {% if request.librarian_notes %}
+                <div class="librarian-note">{{ request.librarian_notes }}</div>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    <!-- Rejected Requests -->
+    {% if rejected_requests %}
+    <div class="request-section">
+        <div class="section-header">
+            <span class="section-title">Rejected Returns</span>
+            <span class="section-count">{{ rejected_requests|length }} requests</span>
+        </div>
+        
+        <ul class="request-list">
+            {% for request in rejected_requests %}
+            <li class="request-entry">
+                <div class="request-book">
+                    <div class="request-title">{{ request.book.title }}</div>
+                    <div class="request-author">{{ request.book.author }}</div>
+                </div>
+                <div class="request-details">
+                    <div>Requested: {{ request.request_date|date:"M d, Y" }}</div>
+                </div>
+                <div class="request-status">
+                    <span class="status-rejected">rejected</span>
+                </div>
+                {% if request.librarian_notes %}
+                <div class="librarian-note">Note: {{ request.librarian_notes }}</div>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Cancel Modal -->
+<div id="cancelModal" class="modal">
+    <div class="modal-content">
+        <div style="margin-bottom: var(--spacing-md); border-bottom: 1px solid var(--border-warm); padding-bottom: var(--spacing-sm);">
+            <h3 style="font-size: 1rem;">Cancel Return Request</h3>
+        </div>
+        <div>
+            <p>Withdraw request for:</p>
+            <p class="modal-book" id="cancelModalBookTitle"></p>
+            <p style="font-size: 0.75rem; color: var(--text-muted);">You may submit a new request at any time.</p>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeCancelModal()" style="padding: 0.375rem 1rem;">keep</button>
+            <form method="post" id="cancelForm" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger" style="padding: 0.375rem 1rem;">withdraw</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openCancelModal(requestId, bookTitle) {
+        document.getElementById('cancelModalBookTitle').innerText = '"' + bookTitle + '"';
+        document.getElementById('cancelForm').action = "{% url 'cancel_return_request' 0 %}".replace('0', requestId);
+        document.getElementById('cancelModal').classList.add('active');
+    }
+    
+    function closeCancelModal() {
+        document.getElementById('cancelModal').classList.remove('active');
+    }
+    
+    document.getElementById('cancelModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeCancelModal();
+        }
+    });
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeCancelModal();
+        }
+    });
+</script>
+{% endblock %}

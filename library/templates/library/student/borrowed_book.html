@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Checkout Ledger · Active Borrows{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Receipt aesthetic - like a library checkout slip */
+    
+    .receipt-header {
+        border-bottom: 2px dashed var(--border-warm);
+        margin-bottom: var(--spacing-xl);
+        padding-bottom: var(--spacing-md);
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: var(--spacing-md);
+    }
+    
+    .receipt-header h1 {
+        border-left: 3px solid var(--accent-gold);
+        padding-left: var(--spacing-lg);
+        margin-bottom: 0;
+        font-size: 1.75rem;
+    }
+    
+    .receipt-date {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        letter-spacing: 0.02em;
+    }
+    
+    /* Receipt items */
+    .receipt-items {
+        list-style: none;
+        margin-bottom: var(--spacing-2xl);
+    }
+    
+    .receipt-item {
+        border-bottom: 1px solid var(--border-warm);
+        padding: var(--spacing-lg) 0;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: var(--spacing-md);
+    }
+    
+    .receipt-item:first-child {
+        border-top: 1px solid var(--border-warm);
+    }
+    
+    .item-info {
+        flex: 2;
+        min-width: 200px;
+    }
+    
+    .item-title {
+        font-family: 'Fraunces', serif;
+        font-size: 1rem;
+        font-weight: 500;
+        margin-bottom: var(--spacing-xs);
+    }
+    
+    .item-author {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        color: var(--text-muted);
+    }
+    
+    .item-dates {
+        flex: 1;
+        min-width: 180px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+    }
+    
+    .item-dates div {
+        margin-bottom: var(--spacing-xs);
+    }
+    
+    .item-status {
+        flex: 0.5;
+        min-width: 100px;
+    }
+    
+    .borrow-badge {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.65rem;
+        letter-spacing: 0.05em;
+        padding: 0.25rem 0.5rem;
+        border-left: 2px solid var(--accent-gold);
+        color: var(--accent-gold);
+    }
+    
+    .due-reminder {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.65rem;
+        color: var(--status-due-soon);
+        margin-top: var(--spacing-xs);
+    }
+    
+    .item-actions {
+        flex-shrink: 0;
+    }
+    
+    /* Fine notice - subtle, not alert-box */
+    .fine-notice {
+        margin-top: var(--spacing-lg);
+        padding: var(--spacing-md);
+        border-top: 1px solid var(--border-warm);
+        border-bottom: 1px solid var(--border-warm);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        text-align: center;
+        letter-spacing: 0.03em;
+    }
+    
+    /* Empty state */
+    .empty-receipt {
+        text-align: center;
+        padding: var(--spacing-2xl);
+        border: 1px solid var(--border-warm);
+        background: var(--bg-card);
+    }
+    
+    .empty-receipt p {
+        font-family: 'Fraunces', serif;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+    }
+    
+    .empty-receipt .btn {
+        margin-top: var(--spacing-lg);
+    }
+    
+    @media (max-width: 768px) {
+        .receipt-item {
+            flex-direction: column;
+        }
+        
+        .item-dates {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+        }
+        
+        .receipt-header {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div>
+    <div class="receipt-header">
+        <h1>Checkout Ledger</h1>
+        <div class="receipt-date">
+            generated · {% now "F d, Y" %}
+        </div>
+    </div>
+    
+    {% if borrowed_books %}
+        <ul class="receipt-items">
+            {% for borrow in borrowed_books %}
+            <li class="receipt-item">
+                <div class="item-info">
+                    <div class="item-title">{{ borrow.book.title }}</div>
+                    <div class="item-author">{{ borrow.book.author }}</div>
+                </div>
+                <div class="item-dates">
+                    <div>📅 borrowed: {{ borrow.borrow_date|date:"M d, Y" }}</div>
+                    <div>⏰ due: {{ borrow.due_date|date:"M d, Y" }}</div>
+                    <div class="due-reminder">
+                        {% if borrow.days_left < 0 %}
+                            overdue by {{ borrow.days_left|stringformat:"d"|slice:"1:" }} days
+                        {% elif borrow.days_left == 0 %}
+                            due today
+                        {% else %}
+                            {{ borrow.days_left }} days remaining
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="item-status">
+                    <span class="borrow-badge">active</span>
+                </div>
+                <div class="item-actions">
+                    <form method="post" action="{% url 'return_book' borrow.id %}" style="display: inline;" onsubmit="return confirmReturn('{{ borrow.book.title|escapejs }}')">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger" style="padding: 0.375rem 0.875rem; font-size: 0.65rem;">
+                            return
+                        </button>
+                    </form>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        
+        <div class="fine-notice">
+            ⚠ Late returns incur a fee of $1.00 per day overdue.
+        </div>
+    {% else %}
+        <div class="empty-receipt">
+            <p>✦ No active borrows ✦</p>
+            <p style="font-size: 0.7rem; margin-top: var(--spacing-sm);">Your checkout ledger is empty.</p>
+            <a href="{% url 'book_list' %}" class="btn">browse collection →</a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    function confirmReturn(bookTitle) {
+        return confirm('Withdraw "' + bookTitle + '" from your borrow list?\n\nThis action cannot be undone.');
+    }
+</script>
+{% endblock %}

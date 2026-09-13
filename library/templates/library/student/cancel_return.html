@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}Withdraw Request · {{ return_request.book.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .withdraw-container {
+        max-width: 550px;
+        margin: var(--spacing-2xl) auto;
+    }
+    
+    .withdraw-notice {
+        border: 1px solid var(--status-overdue);
+        background: rgba(184, 92, 56, 0.05);
+        padding: var(--spacing-xl);
+        text-align: center;
+    }
+    
+    .withdraw-symbol {
+        font-size: 3rem;
+        margin-bottom: var(--spacing-lg);
+        opacity: 0.8;
+    }
+    
+    .withdraw-notice h2 {
+        border-bottom: none;
+        font-size: 1.25rem;
+        margin-bottom: var(--spacing-md);
+        letter-spacing: -0.01em;
+    }
+    
+    .book-quote {
+        font-family: 'Fraunces', serif;
+        font-size: 1rem;
+        font-weight: 500;
+        margin: var(--spacing-lg) 0;
+        padding: var(--spacing-md);
+        border-left: 2px solid var(--accent-gold);
+        background: var(--bg-surface);
+    }
+    
+    .warning-text {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        margin: var(--spacing-md) 0;
+    }
+    
+    .withdraw-actions {
+        display: flex;
+        gap: var(--spacing-md);
+        justify-content: center;
+        margin-top: var(--spacing-xl);
+    }
+    
+    hr {
+        border: none;
+        border-top: 1px solid var(--border-warm);
+        margin: var(--spacing-lg) 0;
+    }
+    
+    @media (max-width: 768px) {
+        .withdraw-container {
+            margin: var(--spacing-md);
+        }
+        
+        .withdraw-actions {
+            flex-direction: column;
+        }
+        
+        .withdraw-actions .btn {
+            width: 100%;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="withdraw-container">
+    <div class="withdraw-notice">
+        <div class="withdraw-symbol">⌫</div>
+        <h2>Withdraw Return Request</h2>
+        
+        <div class="book-quote">
+            “{{ return_request.book.title }}”
+            <div style="font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; margin-top: var(--spacing-xs); color: var(--text-muted);">
+                {{ return_request.book.author }}
+            </div>
+        </div>
+        
+        <p style="font-size: 0.85rem;">
+            You are about to withdraw the return request for this volume.
+        </p>
+        
+        <div class="warning-text">
+            ⚠ The book will remain on your borrowed list.<br>
+            You may submit a new return request at any time.
+        </div>
+        
+        <hr>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="withdraw-actions">
+                <button type="submit" class="btn btn-danger">
+                    withdraw request
+                </button>
+                <a href="{% url 'my_return_requests' %}" class="btn btn-secondary">
+                    keep request
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

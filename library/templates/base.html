@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Library Management System{% endblock %}</title>
+    
+    <!-- Critical: No Bootstrap, no generic fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ---------- CSS RESET with Library Character ---------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        /* ---------- CSS VARIABLES: "Stacks on Paper" ---------- */
+        :root {
+            /* Base colors - warm darkness, like old paper in dim light */
+            --bg-deep: #0f0e0c;
+            --bg-surface: #1a1815;
+            --bg-elevated: #201e1a;
+            --bg-card: #1c1a16;
+            
+            /* Aged parchment tones for text */
+            --text-primary: #e2dcd0;
+            --text-secondary: #b8ae9a;
+            --text-muted: #7a6f5c;
+            
+            /* Accents - no purple, no blue glow */
+            --accent-gold: #c9a03d;
+            --accent-rust: #8b5e3c;
+            --accent-fine: #d4b87a;
+            --border-warm: #2a261f;
+            
+            /* Status colors - muted, not neon */
+            --status-due-soon: #c9a03d;
+            --status-overdue: #b85c38;
+            --status-success: #7a6f5c;
+            
+            /* Spacing */
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+            --spacing-2xl: 3rem;
+        }
+        
+        /* ---------- GLOBAL STYLES ---------- */
+        body {
+            font-family: 'Fraunces', Georgia, serif;
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
+            line-height: 1.5;
+            font-weight: 400;
+            font-size: 16px;
+            letter-spacing: 0.01em;
+            position: relative;
+        }
+        
+        /* Layered background: noise + vignette + diagonal grid */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            background-image: 
+                /* Subtle noise texture */
+                radial-gradient(rgba(255, 245, 215, 0.03) 1px, transparent 1px),
+                /* Diagonal library catalog grid */
+                repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 30px,
+                    rgba(201, 160, 61, 0.03) 30px,
+                    rgba(201, 160, 61, 0.03) 31px
+                ),
+                /* Vignette overlay */
+                radial-gradient(circle at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.6) 100%);
+            background-size: 40px 40px, 62px 62px, 100% 100%;
+        }
+        
+        /* Ensure content sits above background layers */
+        body > * {
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Typography - distinctive headings */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Fraunces', Georgia, serif;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            letter-spacing: -0.03em;
+            border-left: 3px solid var(--accent-gold);
+            padding-left: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        h2 {
+            font-size: 1.75rem;
+            font-weight: 500;
+            border-bottom: 1px solid var(--border-warm);
+            padding-bottom: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        /* Links - no generic blue */
+        a {
+            color: var(--accent-fine);
+            text-decoration: none;
+            transition: color 0.2s ease;
+            border-bottom: 1px solid transparent;
+        }
+        
+        a:hover {
+            color: var(--accent-gold);
+            border-bottom-color: var(--accent-gold);
+        }
+        
+        /* Buttons - distinctive, no rounded corners */
+        .btn {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 0.625rem 1.25rem;
+            background: transparent;
+            border: 1px solid var(--accent-gold);
+            color: var(--accent-gold);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+        
+        .btn:hover {
+            background: var(--accent-gold);
+            color: var(--bg-deep);
+            border-color: var(--accent-gold);
+        }
+        
+        .btn-secondary {
+            border-color: var(--text-muted);
+            color: var(--text-secondary);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--text-muted);
+            color: var(--bg-deep);
+            border-color: var(--text-muted);
+        }
+        
+        .btn-danger {
+            border-color: var(--status-overdue);
+            color: var(--status-overdue);
+        }
+        
+        .btn-danger:hover {
+            background: var(--status-overdue);
+            color: var(--bg-deep);
+        }
+        
+        /* Form inputs - no rounded corners, no blue glow */
+        input, select, textarea {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-warm);
+            padding: 0.625rem 0.875rem;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+            box-shadow: none;
+            background: var(--bg-elevated);
+        }
+        
+        /* Messages - styled as library notices */
+        .messages-container {
+            position: fixed;
+            top: var(--spacing-lg);
+            right: var(--spacing-lg);
+            z-index: 1000;
+            width: 340px;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+        
+        .alert {
+            background: var(--bg-elevated);
+            border-left: 4px solid;
+            padding: var(--spacing-md);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 0.02em;
+            backdrop-filter: blur(8px);
+            box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .alert-success {
+            border-left-color: var(--accent-gold);
+        }
+        
+        .alert-error, .alert-danger {
+            border-left-color: var(--status-overdue);
+        }
+        
+        .alert-warning {
+            border-left-color: var(--status-due-soon);
+        }
+        
+        .alert-info {
+            border-left-color: var(--text-muted);
+        }
+        
+        .btn-close {
+            float: right;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1.25rem;
+            line-height: 1;
+        }
+        
+        /* Navbar - like a book spine */
+        .navbar {
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-warm);
+            padding: var(--spacing-md) var(--spacing-xl);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .navbar-brand {
+            font-family: 'Fraunces', serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: var(--accent-gold);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+        
+        .navbar-brand::before {
+            content: "📖";
+            font-size: 1.25rem;
+        }
+        
+        .navbar-user {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+        
+        .user-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--accent-fine);
+        }
+        
+        .role-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border: 1px solid var(--accent-gold);
+            padding: 0.25rem 0.5rem;
+        }
+        
+        /* Sidebar - ruled lines like catalog drawers */
+        .sidebar {
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border-warm);
+            min-height: calc(100vh - 64px);
+            position: sticky;
+            top: 64px;
+        }
+        
+        .nav {
+            list-style: none;
+            padding: var(--spacing-lg) 0;
+        }
+        
+        .nav-item {
+            margin-bottom: 2px;
+        }
+        
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-sm) var(--spacing-lg);
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            border-left: 2px solid transparent;
+            transition: all 0.15s ease;
+        }
+        
+        .nav-link:hover {
+            color: var(--accent-gold);
+            border-left-color: var(--accent-gold);
+            background: rgba(201, 160, 61, 0.05);
+        }
+        
+        /* Main content area */
+        .main-content {
+            padding: var(--spacing-xl);
+            min-height: calc(100vh - 64px);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.75rem;
+                padding-left: var(--spacing-md);
+            }
+            
+            .main-content {
+                padding: var(--spacing-md);
+            }
+            
+            .sidebar {
+                position: relative;
+                top: 0;
+                min-height: auto;
+            }
+            
+            .messages-container {
+                width: calc(100% - 2rem);
+                right: 1rem;
+                left: 1rem;
+                top: 1rem;
+            }
+        }
+        
+        /* Utility classes */
+        .text-muted {
+            color: var(--text-muted);
+        }
+        
+        .border-bottom {
+            border-bottom: 1px solid var(--border-warm);
+        }
+        
+        /* Scrollbar - custom, subtle */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-deep);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-rust);
+            border-radius: 0;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- Messages -->
+<div class="messages-container">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}">
+                {{ message }}
+                <button type="button" class="btn-close" onclick="this.parentElement.remove()">×</button>
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+<!-- Navbar -->
+<nav class="navbar">
+    <div class="navbar-brand">
+        <span>LibraryMS</span>
+    </div>
+    
+    <div style="flex: 1"></div>
+    
+    <div class="navbar-user">
+        {% if user.is_authenticated %}
+            <span class="user-badge">✦ {{ user.username }}</span>
+            <span class="role-badge">{{ user.get_role_display }}</span>
+            <a href="{% url 'logout' %}" class="btn btn-secondary" style="padding: 0.375rem 0.875rem;">Exit</a>
+        {% endif %}
+    </div>
+</nav>
+
+<!-- Main Layout -->
+<div style="display: flex;">
+    {% if user.is_authenticated %}
+    <!-- Sidebar -->
+    <aside class="sidebar" style="width: 260px;">
+        <ul class="nav">
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'dashboard_redirect' %}">
+                    <span>⌘</span> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'book_list' %}">
+                    <span></span> All Books
+                </a>
+            </li>
+            {% if user.is_librarian or user.is_admin %}
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'add_book' %}">
+                    <span>⊕</span> Add Book
+                </a>
+            </li>
+            {% endif %}
+            {% if user.is_student %}
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'chatbot_page' %}">
+                    <span>⌕</span> Assistant
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </aside>
+    
+    <main class="main-content" style="flex: 1;">
+    {% else %}
+    <main class="main-content" style="flex: 1; max-width: 1200px; margin: 0 auto;">
+    {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+</div>
+
+<script>
+    // Auto-dismiss messages after 6 seconds
+    setTimeout(function() {
+        document.querySelectorAll('.alert').forEach(function(alert) {
+            alert.style.opacity = '0';
+            setTimeout(function() {
+                if(alert.parentElement) alert.remove();
+            }, 300);
+        });
+    }, 6000);
+</script>
+
+{% block extra_js %}{% endblock %}
+
+</body>
+</html>
